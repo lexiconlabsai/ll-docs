@@ -1,0 +1,141 @@
+---
+title: 'Create Homework Submission'
+description: 'Upload homework files for AI review'
+api: 'POST /v1/homeworks/:homeworkId/submissions'
+---
+
+## Create Homework Submission
+
+This endpoint allows students to upload their homework files for review.
+
+### Path Parameters
+
+<ParamField path="homeworkId" type="string" required>
+  The UUID of the homework being submitted
+</ParamField>
+
+### Request Body
+
+<ParamField body="studentId" type="string" required>
+  The ID of the student submitting the homework
+</ParamField>
+
+<ParamField body="files" type="array of files" required>
+  The files containing the student's homework solution (max 10 files)
+</ParamField>
+
+### Headers
+
+<ParamField header="Content-Type" type="string" required>
+  multipart/form-data
+</ParamField>
+
+<ParamField header="x-tenant-api-secret" type="string" required>
+  Your API authentication key
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  The unique identifier for the submission
+</ResponseField>
+
+<ResponseField name="homeworkId" type="string">
+  The ID of the homework being submitted
+</ResponseField>
+
+<ResponseField name="chatId" type="string">
+  The ID of the chat session created for this submission review
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The current status of the submission. Possible values: 'submitted' (initial state), 'reviewed' (AI has reviewed), 'approved' (meets requirements), or 'needs_revision' (requires changes).
+</ResponseField>
+
+<ResponseField name="chatIframeUrl" type="string">
+  URL for the chat interface
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Timestamp when the submission was created
+</ResponseField>
+
+<ResponseField name="analysis" type="string">
+  AI analysis of the submission
+</ResponseField>
+
+<ResponseField name="grade" type="string">
+  Grade assigned to the submission. Possible values: 'A', 'B', 'C', 'D', 'E', 'F'.
+</ResponseField>
+
+<ResponseExample>
+```json Status: 201 Created
+{
+  "id": "sub_123456789",
+  "homeworkId": "123e4567-e89b-12d3-a456-426614174000",
+  "chatId": "chat_987654321",
+  "status": "submitted",
+  "chatIframeUrl": "https://chat.lexiconlabs.ai/?chat_id=chat_987654321",
+  "createdAt": "2023-07-15T14:32:17Z",
+  "analysis": "",
+  "grade": ""
+}
+```
+</ResponseExample>
+
+### Error Responses
+
+<Accordion title="400: Bad Request">
+  Invalid input parameters
+</Accordion>
+
+<Accordion title="401: Unauthorized">
+  Invalid or missing API key
+</Accordion>
+
+<Accordion title="404: Not Found">
+  Homework not found
+</Accordion>
+
+<Accordion title="500: Internal Server Error">
+  Processing error
+</Accordion>
+
+## Example Usage
+
+### cURL
+
+```bash
+curl -X POST "https://api.lexiconlabs.ai/v1/homeworks/123e4567-e89b-12d3-a456-426614174000/submissions" \
+  -H "Content-Type: multipart/form-data" \
+  -H "x-tenant-api-secret: YOUR_API_KEY" \
+  -F "studentId=student123" \
+  -F "files=@solution.py" \
+  -F "files=@report.txt"
+```
+
+### JavaScript
+
+```javascript
+const formData = new FormData();
+formData.append('studentId', 'student123');
+formData.append('files', fileInput.files[0]);
+formData.append('files', fileInput.files[1]);
+
+// Replace with the actual homework UUID
+const homeworkId = '123e4567-e89b-12d3-a456-426614174000';
+fetch(`https://api.lexiconlabs.ai/v1/homeworks/${homeworkId}/submissions`, {
+  method: 'POST',
+  headers: {
+    'x-tenant-api-secret': 'YOUR_API_KEY'
+  },
+  body: formData
+})
+.then(response => response.json())
+.then(data => {
+  const chatId = data.chatId;
+  // Redirect to chat interface or embed iframe
+  window.location.href = `https://chat.lexiconlabs.ai/?chat_id=${chatId}`;
+})
+.catch(error => console.error('Error:', error));
+``` 

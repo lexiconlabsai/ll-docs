@@ -1,0 +1,256 @@
+---
+title: 'Get Homework Assignments'
+api: 'GET /v1/homeworks'
+---
+
+## Overview
+
+This endpoint retrieves a paginated list of homework assignments. It supports filtering by teacher, course, and search terms.
+
+## Authentication
+
+<ParamField header="x-tenant-api-secret" type="string" required>
+  Authentication header with your tenant's API key
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="limit" type="integer" default="10">
+  The maximum number of assignments to return per page
+</ParamField>
+
+<ParamField query="offset" type="integer" default="0">
+  The number of items to skip before starting to collect results
+</ParamField>
+
+<ParamField query="teacherId" type="string">
+  Filter assignments by teacher UUID
+</ParamField>
+
+<ParamField query="courseId" type="string | string[]">
+  Filter assignments by course ID(s)
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search term to filter assignments
+</ParamField>
+
+## Response
+
+<ResponseField name="prevPage" type="boolean">
+  Indicates if there's a previous page of results
+</ResponseField>
+
+<ResponseField name="nextPage" type="boolean">
+  Indicates if there's a next page of results
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of homework assignment objects
+</ResponseField>
+
+<ResponseField name="total" type="integer">
+  Total number of assignments matching the query
+</ResponseField>
+
+### Homework Assignment Object
+
+<ResponseField name="id" type="string">
+  Unique identifier for the homework assignment
+</ResponseField>
+
+<ResponseField name="tenantId" type="string">
+  Tenant identifier
+</ResponseField>
+
+<ResponseField name="teacherId" type="string">
+  ID of the teacher who created the assignment
+</ResponseField>
+
+<ResponseField name="assignmentId" type="string">
+  Unique assignment identifier
+</ResponseField>
+
+<ResponseField name="subject" type="string">
+  The subject of the homework assignment (if available)
+</ResponseField>
+
+<ResponseField name="courseId" type="string">
+  ID of the course this homework belongs to
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" format="date-time">
+  Timestamp when the assignment was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" format="date-time">
+  Timestamp when the assignment was last updated
+</ResponseField>
+
+<ResponseField name="files" type="array">
+  Array of files associated with the homework assignment
+</ResponseField>
+
+<ResponseField name="course" type="object">
+  Course information related to this homework
+</ResponseField>
+
+### File Object
+
+<ResponseField name="id" type="string">
+  Unique identifier for the file
+</ResponseField>
+
+<ResponseField name="homeworkId" type="string">
+  ID of the homework this file belongs to
+</ResponseField>
+
+<ResponseField name="fileType" type="string">
+  Type of the file (e.g., "task", "solution", "restriction")
+</ResponseField>
+
+<ResponseField name="fileName" type="string">
+  Name of the file
+</ResponseField>
+
+<ResponseField name="filePath" type="string">
+  Path to the file in storage
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Content of the file
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" format="date-time">
+  Timestamp when the file was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" format="date-time">
+  Timestamp when the file was last updated
+</ResponseField>
+
+### Course Object
+
+<ResponseField name="id" type="string">
+  Unique identifier for the course
+</ResponseField>
+
+<ResponseField name="tenantId" type="string">
+  Tenant identifier
+</ResponseField>
+
+<ResponseField name="teacherId" type="string">
+  ID of the teacher who created the course
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the course
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" format="date-time">
+  Timestamp when the course was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" format="date-time">
+  Timestamp when the course was last updated
+</ResponseField>
+
+<ResponseExample>
+```json Status: 200 OK
+{
+  "data": [
+    {
+      "id": "3fe84441-06c8-4e3a-95dc-fb009e4aaac6",
+      "tenantId": "fe3a8563-435f-4535-95b5-7dc723536d46",
+      "teacherId": "f9809200-e31f-4225-b9f3-73e7fb406d9a",
+      "assignmentId": "3",
+      "courseId": "fa8c410e-65ce-4f89-90da-e752747a8609",
+      "createdAt": "2025-05-07T18:33:16.098Z",
+      "updatedAt": "2025-05-07T18:33:16.098Z",
+      "files": [
+        {
+          "id": "bc84333d-2c5d-48aa-9391-48dca92c436d",
+          "homeworkId": "3fe84441-06c8-4e3a-95dc-fb009e4aaac6",
+          "fileType": "restriction",
+          "fileName": "restrictions_01(1).md",
+          "filePath": "fe3a8563-435f-4535-95b5-7dc723536d46/3fe84441-06c8-4e3a-95dc-fb009e4aaac6/restrictions_01(1).md",
+          "content": "1. Задание должно быть решено при помощи итератора.",
+          "createdAt": "2025-05-07T18:33:16.106Z",
+          "updatedAt": "2025-05-07T18:33:16.106Z"
+        },
+        {
+          "id": "ea06e25e-7a75-4ef2-8caf-4a5733ccdba5",
+          "homeworkId": "3fe84441-06c8-4e3a-95dc-fb009e4aaac6",
+          "fileType": "solution",
+          "fileName": "Task1.java",
+          "filePath": "fe3a8563-435f-4535-95b5-7dc723536d46/3fe84441-06c8-4e3a-95dc-fb009e4aaac6/Task1.java",
+          "content": "import java.util.ArrayList;\r\nimport java.util.Iterator;\r\nimport java.util.List;\r\n\r\npublic class Task1 {\r\n\r\n    public static void main(String[] args) {\r\n\r\n        List<Integer> numbers = new ArrayList<>(List.of(4, 8, 7, 10, 2, 9, 11, 5, 8, 0, 5));\r\n\r\n        System.out.println(\"Исходный список:\");\r\n        System.out.println(numbers);\r\n\r\n        Iterator<Integer> iterator = numbers.iterator();\r\n        while (iterator.hasNext()) {\r\n            if (iterator.next() % 5 == 0) {\r\n                iterator.remove();\r\n            }\r\n        }\r\n\r\n        System.out.println(\"Список после удаления:\");\r\n        System.out.println(numbers);\r\n    }\r\n}\r\n",
+          "createdAt": "2025-05-07T18:33:16.106Z",
+          "updatedAt": "2025-05-07T18:33:16.106Z"
+        },
+        {
+          "id": "d046aef0-5811-4b17-852c-8d32a40a0d4e",
+          "homeworkId": "3fe84441-06c8-4e3a-95dc-fb009e4aaac6",
+          "fileType": "task",
+          "fileName": "homework.md",
+          "filePath": "fe3a8563-435f-4535-95b5-7dc723536d46/3fe84441-06c8-4e3a-95dc-fb009e4aaac6/homework.md",
+          "content": "1. Задача 1:\r\n   - Создайте список чисел - 4, 8, 7, 10, 2, 9, 11, 5, 8, 0, 5. Выведите его в консоль.\r\n   - Удалите из списка все числа, которые делятся нацело на 5. Снова выведите список в консоль.\r\n2. Задача 2:\r\n   - Создайте список чисел - 4, 8, 7, 10, 2, 9, 11, 5, 8, 0, 5. Выведите его в консоль.\r\n   - Двигаясь по списку, найдите число, которое больше 10.\r\n   - Удалите из списка все чётные числа перед этим числом. Снова выведите список в консоль.",
+          "createdAt": "2025-05-07T18:33:16.106Z",
+          "updatedAt": "2025-05-07T18:33:16.106Z"
+        }
+      ],
+      "course": {
+        "id": "fa8c410e-65ce-4f89-90da-e752747a8609",
+        "tenantId": "fe3a8563-435f-4535-95b5-7dc723536d46",
+        "teacherId": "f9809200-e31f-4225-b9f3-73e7fb406d9a",
+        "name": "Java",
+        "createdAt": "2025-05-07T18:33:12.682Z",
+        "updatedAt": "2025-05-07T18:33:12.682Z"
+      }
+    }
+  ],
+  "nextPage": false,
+  "prevPage": false,
+  "total": 4
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<Accordion title="400: Bad Request">
+  Invalid query parameters
+</Accordion>
+
+<Accordion title="401: Unauthorized">
+  Invalid or missing API key
+</Accordion>
+
+<Accordion title="500: Internal Server Error">
+  Server error processing the request
+</Accordion>
+
+## Example Usage
+
+### cURL
+
+```bash
+curl -X GET "https://api.lexiconlabs.ai/v1/homeworks?limit=10&offset=0&courseId=course-101" \
+  -H "x-tenant-api-secret: YOUR_API_KEY"
+```
+
+### JavaScript
+
+```javascript
+fetch('https://api.lexiconlabs.ai/v1/homeworks?limit=10&offset=0&courseId=course-101', {
+  method: 'GET',
+  headers: {
+    'x-tenant-api-secret': 'YOUR_API_KEY'
+  }
+})
+.then(response => response.json())
+.then(data => {
+  console.log(data);
+})
+.catch(error => console.error('Error:', error));
+```

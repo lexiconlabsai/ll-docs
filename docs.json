@@ -11,45 +11,25 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Get Started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Essentials",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/settings",
-              "essentials/navigation",
-              "essentials/reusable-snippets"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "API Reference",
         "groups": [
           {
-            "group": "API Documentation",
+            "group": "Lexicon Labs API",
             "pages": [
-              "api-reference/introduction"
+              "index",
+              "api-reference/homeworks/introduction"
             ]
           },
           {
-            "group": "Endpoint Examples",
+            "group": "Homeworks",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/homeworks/get"
+            ]
+          },
+          {
+            "group": "Submissions",
+            "pages": [
+              "api-reference/homeworks/submissions/create"
             ]
           }
         ]
@@ -59,18 +39,13 @@
       "anchors": [
         {
           "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
+          "href": "https://lexiconlabssro.mintlify.app",
           "icon": "book-open-cover"
         },
         {
-          "anchor": "Community",
-          "href": "https://mintlify.com/community",
-          "icon": "slack"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Website",
+          "href": "https://lexiconlabs.ai",
+          "icon": "globe"
         }
       ]
     }

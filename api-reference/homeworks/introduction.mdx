@@ -1,0 +1,96 @@
+---
+title: 'Homeworks API'
+description: 'Endpoints for managing homework assignments and submissions'
+---
+
+## Homeworks API Overview
+
+The Homeworks API provides endpoints to manage homework assignments and student submissions. This API allows teachers to create assignments, manage files, and view student submissions, while also enabling students to submit their homework for AI-powered review.
+
+## Authentication
+
+All API endpoints require an API key for authentication, which should be included in the request header.
+
+**Header**: `x-tenant-api-secret`
+
+**Value**: `YOUR_API_KEY`
+
+<Warning>
+  This API key is unique to your tenant and should be kept secure.
+</Warning>
+
+## Key Concepts
+
+### Homework Assignments
+
+Homework assignments are created by teachers and contain information such as:
+- Subject
+- Course information
+- Assignment files
+- Submission requirements
+
+### Homework Submissions
+
+Students can submit their homework solutions through the API, which:
+- Supports various file formats
+- Provides automated review through an AI-powered chatbot
+- Allows for chat-based interaction about the submission
+
+## Pagination
+
+Many endpoints that return collections support pagination using `limit` and `offset` parameters:
+
+- `limit`: The maximum number of results to return (default 10)
+- `offset`: The number of items to skip before starting to collect results (default 0)
+
+The response includes `prevPage` and `nextPage` boolean fields to indicate if additional pages exist.
+
+## Supported File Types
+
+The API supports various file formats including:
+
+- Text files (`.txt`, `.md`)
+- Programming files (`.py`, `.java`, `.js`, `.ts`, `.c`, `.cpp`, `.cs`, `.go`, `.rb`, `.php`)
+- Web files (`.html`, `.css`, `.json`, `.xml`)
+- Document files (`.docx`)
+- PDF files (`.pdf`)
+
+## Using the Chat Interface
+
+After a successful submission, the API returns a `chatId` that can be used to access the AI review chat interface.
+
+### Chat Interface URL
+
+```
+https://chat.lexiconlabs.ai/?chat_id={chatId}
+```
+
+Replace `{chatId}` with the actual chatId returned from the submission API.
+
+### Embedding the Chat Interface
+
+You can embed the chat interface in your application using an iframe:
+
+```html
+<iframe
+  src="https://chat.lexiconlabs.ai/?chat_id={chatId}"
+  width="100%"
+  height="600px"
+  frameborder="0"></iframe>
+```
+
+## Chat Interface Features
+
+- Students can interact with an AI tutor about their submission
+- The AI provides feedback based on:
+  - The student's submitted files
+  - The homework requirements
+  - The solution criteria
+  - The subject matter context
+
+## Notes
+
+- The submission is processed asynchronously, and the AI review is generated in the background
+- The chat interface becomes available immediately after submission
+- The review process analyzes the student's submission against the homework requirements and solution criteria
+- Keep your API key secure and do not expose it in client-side code

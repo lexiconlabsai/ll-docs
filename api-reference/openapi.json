@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
+    "title": "Homework Submission API",
+    "description": "API for submitting homework and accessing AI-powered review chatbot",
     "license": {
       "name": "MIT"
     },
@@ -10,45 +10,76 @@
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "https://api.lexiconlabs.ai"
     }
   ],
   "security": [
     {
-      "bearerAuth": []
+      "apiKeyHeader": []
     }
   ],
   "paths": {
-    "/plants": {
+    "/v1/homeworks": {
       "get": {
-        "description": "Returns all plants from the system that the user has access to",
+        "description": "Get all homework assignments",
         "parameters": [
           {
             "name": "limit",
             "in": "query",
-            "description": "The maximum number of results to return",
+            "description": "The maximum number of assignments to return per page",
             "schema": {
               "type": "integer",
-              "format": "int32"
+              "default": 10
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "teacherId",
+            "in": "query",
+            "description": "Filter assignments by teacher UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "courseId",
+            "in": "query",
+            "description": "Filter assignments by course ID(s)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search term to filter assignments",
+            "schema": {
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "Returns all assignments",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
-                  }
+                  "$ref": "#/components/schemas/HomeworkAssignmentPage"
                 }
               }
             }
           },
           "400": {
-            "description": "Unexpected error",
+            "description": "Bad Request - Invalid query parameters",
             "content": {
               "application/json": {
                 "schema": {
@@ -56,35 +87,19 @@
                 }
               }
             }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
           },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "plant response",
+          "401": {
+            "description": "Unauthorized - Invalid or missing API key",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Plant"
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
           },
-          "400": {
-            "description": "unexpected error",
+          "500": {
+            "description": "Internal Server Error - Processing error",
             "content": {
               "application/json": {
                 "schema": {
@@ -96,28 +111,89 @@
         }
       }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
+    "/v1/homeworks/{homeworkId}/submissions": {
+      "post": {
+        "description": "Upload homework files for AI review",
         "parameters": [
           {
-            "name": "id",
+            "name": "homeworkId",
             "in": "path",
-            "description": "ID of plant to delete",
             "required": true,
+            "description": "UUID of the homework assignment being submitted",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["studentId", "files"],
+                "properties": {
+                  "studentId": {
+                    "type": "string",
+                    "description": "The ID of the student submitting the homework"
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "The files containing the student's homework solution (max 10 files)"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
+          "201": {
+            "description": "Homework submission created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeworkSubmission"
+                }
+              }
+            }
           },
           "400": {
-            "description": "unexpected error",
+            "description": "Bad Request - Invalid input parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Homework not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - Processing error",
             "content": {
               "application/json": {
                 "schema": {
@@ -130,72 +206,160 @@
       }
     }
   },
-  "webhooks": {
-    "/plant/webhook": {
-      "post": {
-        "description": "Information about a new plant added to the store",
-        "requestBody": {
-          "description": "Plant added to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
-          }
-        }
-      }
-    }
-  },
   "components": {
     "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
+      "HomeworkAssignmentPage": {
         "type": "object",
+        "required": [
+          "prevPage",
+          "nextPage",
+          "data"
+        ],
         "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
+          "prevPage": {
+            "type": "boolean",
+            "description": "Indicates if there's a previous page of results"
           },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
+          "nextPage": {
+            "type": "boolean",
+            "description": "Indicates if there's a next page of results"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HomeworkAssignment"
+            },
+            "description": "Array of homework assignment objects"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of assignments matching the query"
           }
         }
       },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
+      "HomeworkAssignment": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenantId",
+          "teacherId",
+          "assignmentId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the homework assignment"
           },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
+          "tenantId": {
+            "type": "string",
+            "description": "Tenant identifier"
+          },
+          "teacherId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the teacher who created the assignment"
+          },
+          "assignmentId": {
+            "type": "string",
+            "description": "Unique assignment identifier"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject of the homework assignment"
+          },
+          "courseId": {
+            "type": "string",
+            "description": "ID of the course this homework belongs to"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the assignment was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the assignment was last updated"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "File identifier"
+                },
+                "fileName": {
+                  "type": "string",
+                  "description": "Name of the file"
+                }
               }
-            }
+            },
+            "description": "Array of files associated with the homework assignment"
+          },
+          "submissions": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Array of student submissions for this homework assignment"
           }
-        ]
+        }
+      },
+      "HomeworkSubmission": {
+        "type": "object",
+        "required": [
+          "id",
+          "homeworkId",
+          "chatId",
+          "status",
+          "chatIframeUrl",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier for the submission"
+          },
+          "homeworkId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The UUID of the homework being submitted"
+          },
+          "chatId": {
+            "type": "string",
+            "description": "The ID of the chat session created for this submission review"
+          },
+          "status": {
+            "type": "string",
+            "description": "The current status of the submission",
+            "enum": ["submitted", "reviewed", "approved", "needs_revision"]
+          },
+          "chatIframeUrl": {
+            "type": "string",
+            "description": "URL for the chat interface"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the submission was created"
+          },
+          "analysis": {
+            "type": "string",
+            "description": "AI analysis of the submission"
+          }
+        }
       },
       "Error": {
+        "type": "object",
         "required": [
           "error",
           "message"
         ],
-        "type": "object",
         "properties": {
           "error": {
             "type": "integer",
@@ -208,9 +372,10 @@
       }
     },
     "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
+      "apiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-tenant-api-secret"
       }
     }
   }
