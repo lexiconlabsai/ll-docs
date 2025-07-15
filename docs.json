@@ -14,34 +14,23 @@
         "tab": "API Reference",
         "groups": [
           {
-            "group": "Lexicon Labs API",
-            "pages": [
-              "index",
-              "api-reference/homeworks/introduction",
-              "api-reference/chats/introduction"
-            ]
-          },
-          {
-            "group": "Homeworks",
-            "pages": [
-              "api-reference/homeworks/get"
-            ]
-          },
-          {
-            "group": "Submissions",
-            "pages": [
-              "api-reference/homeworks/submissions/create"
-            ]
-          },
-          {
             "group": "Chats",
             "pages": [
+              "api-reference/chats/introduction",
               "api-reference/chats/create",
               "api-reference/chats/list-user-chats",
               "api-reference/chats/get-chat",
               "api-reference/chats/get-messages",
               "api-reference/chats/delete-chat",
               "api-reference/chats/websocket"
+            ]
+          },
+          {
+            "group": "Homeworks",
+            "pages": [
+              "api-reference/homeworks/introduction",
+              "api-reference/homeworks/get",
+              "api-reference/homeworks/submissions/create"
             ]
           }
         ]
@@ -51,7 +40,7 @@
       "anchors": [
         {
           "anchor": "Documentation",
-          "href": "https://lexiconlabssro.mintlify.app",
+          "href": "https://docs.lexiconlabs.ai",
           "icon": "book-open-cover"
         },
         {
