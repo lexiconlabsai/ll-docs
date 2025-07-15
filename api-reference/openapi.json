@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Homework Submission API",
-    "description": "API for submitting homework and accessing AI-powered review chatbot",
+    "title": "Lexicon Labs API",
+    "description": "API for homework submission, AI-powered review, and real-time chat conversations",
     "license": {
       "name": "MIT"
     },
@@ -10,7 +10,12 @@
   },
   "servers": [
     {
-      "url": "https://api.lexiconlabs.ai"
+      "url": "https://api.lexiconlabs.ai",
+      "description": "Homework API Server"
+    },
+    {
+      "url": "http://localhost:8000",
+      "description": "Chat API Server"
     }
   ],
   "security": [
@@ -204,6 +209,399 @@
           }
         }
       }
+    },
+    "/api/v1/chats/": {
+      "post": {
+        "description": "Create a new chat session",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["user_id"],
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "description": "The ID of the user creating the chat session"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Optional custom title for the chat"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Optional metadata object"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Chat created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chats/user/{user_id}": {
+      "get": {
+        "description": "List all chats for a specific user",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the user whose chats to retrieve",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of items to skip",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of chats to return",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Sort order by creation date",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of user chats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chats/{chat_id}": {
+      "get": {
+        "description": "Get specific chat details",
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the chat",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chat not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a chat session and all its messages",
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the chat to delete",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chat not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - Chat has active connections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chats/{chat_id}/messages": {
+      "get": {
+        "description": "Get paginated messages from a chat",
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the chat",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of messages to skip",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of messages to return",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Sort order by creation time",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "asc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of chat messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chat not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -369,6 +767,201 @@
             "type": "string"
           }
         }
+      },
+      "Chat": {
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "tenant_id",
+          "title",
+          "config",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the chat session"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "The ID of the user who owns this chat"
+          },
+          "tenant_id": {
+            "type": "string",
+            "description": "The tenant identifier"
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the chat session"
+          },
+          "config": {
+            "type": "object",
+            "description": "Configuration object containing metadata and chat settings"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the chat was created"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the chat was last updated"
+          },
+          "last_message_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Timestamp of the last message in this chat"
+          },
+          "message_count": {
+            "type": "integer",
+            "description": "Total number of messages in this chat"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the chat"
+          }
+        }
+      },
+      "ChatListResponse": {
+        "type": "object",
+        "required": [
+          "chats",
+          "total",
+          "offset",
+          "limit",
+          "has_more"
+        ],
+        "properties": {
+          "chats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Chat"
+            },
+            "description": "Array of chat objects"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of chats for this user"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Current offset value used for pagination"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Current limit value used for pagination"
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Indicates if there are more chats available"
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "required": [
+          "id",
+          "content",
+          "sender_role",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the message"
+          },
+          "content": {
+            "type": "string",
+            "description": "The text content of the message"
+          },
+          "sender_role": {
+            "type": "string",
+            "enum": ["user", "assistant"],
+            "description": "Role of the message sender"
+          },
+          "media_type": {
+            "type": "string",
+            "nullable": true,
+            "description": "Type of media attachment, if any"
+          },
+          "media_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL to the media attachment, if any"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the message was created"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata associated with the message"
+          }
+        }
+      },
+      "MessageListResponse": {
+        "type": "object",
+        "required": [
+          "messages",
+          "total",
+          "offset",
+          "limit",
+          "has_more"
+        ],
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "description": "Array of message objects from the chat"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of messages in this chat"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Current offset value used for pagination"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Current limit value used for pagination"
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Indicates if there are more messages available"
+          }
+        }
+      },
+      "DeleteResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "deleted_at"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indicates if the deletion was successful"
+          },
+          "message": {
+            "type": "string",
+            "description": "Confirmation message about the deletion"
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the chat was deleted"
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -376,6 +969,11 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-tenant-api-secret"
+      },
+      "chatApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
       }
     }
   }

@@ -17,7 +17,8 @@
             "group": "Lexicon Labs API",
             "pages": [
               "index",
-              "api-reference/homeworks/introduction"
+              "api-reference/homeworks/introduction",
+              "api-reference/chats/introduction"
             ]
           },
           {
@@ -30,6 +31,17 @@
             "group": "Submissions",
             "pages": [
               "api-reference/homeworks/submissions/create"
+            ]
+          },
+          {
+            "group": "Chats",
+            "pages": [
+              "api-reference/chats/create",
+              "api-reference/chats/list-user-chats",
+              "api-reference/chats/get-chat",
+              "api-reference/chats/get-messages",
+              "api-reference/chats/delete-chat",
+              "api-reference/chats/websocket"
             ]
           }
         ]

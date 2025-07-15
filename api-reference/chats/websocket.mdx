@@ -1,0 +1,661 @@
+---
+title: 'WebSocket Integration'
+description: 'Real-time messaging with streaming AI responses'
+---
+
+## WebSocket Integration
+
+The Chat API provides real-time messaging capabilities through WebSocket connections. This allows for immediate message delivery and streaming AI responses that enhance the user experience.
+
+## Connection Setup
+
+### Endpoint
+
+```
+ws://localhost:8000/ws/chat
+```
+
+### Authentication Parameters
+
+WebSocket connections require authentication through query parameters or headers:
+
+**Required Parameters:**
+- `api_key`: Your tenant's API key
+- `user_id`: User identifier 
+- `chat_id`: Chat UUID (must exist from REST API)
+
+### Connection Methods
+
+#### Query Parameters
+
+```javascript
+const ws = new WebSocket('ws://localhost:8000/ws/chat?api_key=your-key&user_id=user123&chat_id=uuid');
+```
+
+#### Headers
+
+```javascript
+const ws = new WebSocket('ws://localhost:8000/ws/chat', {
+  headers: {
+    'X-API-Key': 'your-key',
+    'X-User-ID': 'user123',
+    'X-Chat-ID': 'uuid'
+  }
+});
+```
+
+## Message Format
+
+### Sending Messages
+
+Send messages as JSON with minimal required fields:
+
+```json
+{
+  "content": "Your message to the AI agent"
+}
+```
+
+**With Metadata:**
+
+```json
+{
+  "content": "I need help with billing",
+  "metadata": {
+    "category": "billing",
+    "urgency": "high"
+  }
+}
+```
+
+### Receiving Events
+
+All WebSocket events follow this structure:
+
+```json
+{
+  "event_type": "event_name",
+  "timestamp": "2024-01-15T10:30:00Z",
+  // ... event-specific fields
+}
+```
+
+## Event Types
+
+### 1. Connection Established
+
+Sent immediately when WebSocket connection is successful:
+
+```json
+{
+  "event_type": "connection_established",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "user_id": "user123",
+  "chat_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "tenant_id": "tenant-uuid-here"
+}
+```
+
+### 2. User Created
+
+Sent when a new user entity is automatically created:
+
+```json
+{
+  "event_type": "user_created",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "user_id": "user123"
+}
+```
+
+### 3. Message Received
+
+Confirms your message was received and saved:
+
+```json
+{
+  "event_type": "message_received",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "message_id": "msg-uuid",
+  "chat_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "user_id": "user123",
+  "content": "Hello, I need help"
+}
+```
+
+### 4. AI Stream Started
+
+Indicates the AI has started generating a response:
+
+```json
+{
+  "event_type": "message_stream_started",
+  "timestamp": "2024-01-15T10:30:01Z",
+  "chat_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "user_id": "user123"
+}
+```
+
+### 5. AI Stream Token
+
+Real-time tokens as the AI generates its response:
+
+```json
+{
+  "event_type": "message_stream_token",
+  "timestamp": "2024-01-15T10:30:01Z",
+  "chat_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "token": "I'd"
+}
+```
+
+```json
+{
+  "event_type": "message_stream_token",
+  "timestamp": "2024-01-15T10:30:01Z",
+  "chat_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "token": " be"
+}
+```
+
+### 6. AI Stream Ended
+
+Complete AI response with final message details:
+
+```json
+{
+  "event_type": "message_stream_ended",
+  "timestamp": "2024-01-15T10:30:05Z",
+  "message_id": "msg-ai-uuid",
+  "chat_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "user_id": "user123",
+  "content": "I'd be happy to help you with your account! What specific issue are you experiencing?"
+}
+```
+
+### 7. Error Events
+
+#### Authentication Error
+
+```json
+{
+  "event_type": "error",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "error_code": "AUTH_ERROR",
+  "error_message": "Invalid API key",
+  "details": {
+    "fix": "Check your tenant API key value. Each tenant has a unique API key in the tenants table."
+  }
+}
+```
+
+#### Chat Not Found
+
+```json
+{
+  "event_type": "error",
+  "error_code": "CHAT_NOT_FOUND",
+  "error_message": "Chat with chat_id 'uuid' not found or does not belong to your tenant",
+  "details": {
+    "fix": "Create the chat first using POST /api/v1/chats/ endpoint"
+  }
+}
+```
+
+#### Missing Parameters
+
+```json
+{
+  "event_type": "error",
+  "error_code": "AUTH_ERROR",
+  "error_message": "Missing user_id parameter",
+  "details": {
+    "fix": "Add user_id parameter: ?user_id=your_user_id or X-User-ID header"
+  }
+}
+```
+
+## Implementation Examples
+
+### Basic JavaScript Client
+
+```javascript
+class ChatClient {
+  constructor(apiKey, userId, chatId) {
+    this.apiKey = apiKey;
+    this.userId = userId;
+    this.chatId = chatId;
+    this.ws = null;
+    this.connected = false;
+  }
+
+  connect() {
+    const url = `ws://localhost:8000/ws/chat?api_key=${this.apiKey}&user_id=${this.userId}&chat_id=${this.chatId}`;
+    this.ws = new WebSocket(url);
+
+    this.ws.onopen = () => {
+      console.log('Connected to chat');
+      this.connected = true;
+    };
+
+    this.ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      this.handleEvent(data);
+    };
+
+    this.ws.onclose = (event) => {
+      console.log('Disconnected:', event.code, event.reason);
+      this.connected = false;
+      this.handleDisconnect(event);
+    };
+
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+  }
+
+  handleEvent(event) {
+    switch (event.event_type) {
+      case 'connection_established':
+        console.log('Connection established');
+        break;
+      
+      case 'message_received':
+        console.log('Message received:', event.content);
+        break;
+      
+      case 'message_stream_started':
+        console.log('AI is thinking...');
+        this.currentResponse = '';
+        break;
+      
+      case 'message_stream_token':
+        this.currentResponse += event.token;
+        this.updateUI(this.currentResponse);
+        break;
+      
+      case 'message_stream_ended':
+        console.log('AI response complete:', event.content);
+        this.finalizeResponse(event);
+        break;
+      
+      case 'error':
+        console.error('Error:', event.error_message);
+        this.handleError(event);
+        break;
+    }
+  }
+
+  sendMessage(content, metadata = {}) {
+    if (!this.connected) {
+      throw new Error('Not connected to chat');
+    }
+
+    const message = {
+      content,
+      ...(Object.keys(metadata).length > 0 && { metadata })
+    };
+
+    this.ws.send(JSON.stringify(message));
+  }
+
+  disconnect() {
+    if (this.ws) {
+      this.ws.close();
+    }
+  }
+
+  // Override these methods in your implementation
+  updateUI(partialResponse) {
+    // Update UI with streaming response
+  }
+
+  finalizeResponse(event) {
+    // Handle complete AI response
+  }
+
+  handleError(error) {
+    // Handle error events
+  }
+
+  handleDisconnect(event) {
+    // Handle disconnection, potentially reconnect
+  }
+}
+
+// Usage
+const chat = new ChatClient('your-api-key', 'user123', 'chat-uuid');
+chat.connect();
+
+// Send a message
+chat.sendMessage('Hello, I need help with my account');
+```
+
+### React Hook Implementation
+
+```javascript
+import { useState, useEffect, useRef, useCallback } from 'react';
+
+function useWebSocketChat(apiKey, userId, chatId) {
+  const [connected, setConnected] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [streamingResponse, setStreamingResponse] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const ws = useRef(null);
+
+  const connect = useCallback(() => {
+    if (!apiKey || !userId || !chatId) return;
+
+    const url = `ws://localhost:8000/ws/chat?api_key=${apiKey}&user_id=${userId}&chat_id=${chatId}`;
+    ws.current = new WebSocket(url);
+
+    ws.current.onopen = () => {
+      setConnected(true);
+      setError(null);
+    };
+
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      switch (data.event_type) {
+        case 'connection_established':
+          console.log('Connected to chat');
+          break;
+        
+        case 'message_received':
+          setMessages(prev => [...prev, {
+            id: data.message_id,
+            content: data.content,
+            sender: 'user',
+            timestamp: data.timestamp
+          }]);
+          break;
+        
+        case 'message_stream_started':
+          setIsStreaming(true);
+          setStreamingResponse('');
+          break;
+        
+        case 'message_stream_token':
+          setStreamingResponse(prev => prev + data.token);
+          break;
+        
+        case 'message_stream_ended':
+          setMessages(prev => [...prev, {
+            id: data.message_id,
+            content: data.content,
+            sender: 'assistant',
+            timestamp: data.timestamp
+          }]);
+          setIsStreaming(false);
+          setStreamingResponse('');
+          break;
+        
+        case 'error':
+          setError(data.error_message);
+          break;
+      }
+    };
+
+    ws.current.onclose = () => {
+      setConnected(false);
+    };
+
+    ws.current.onerror = (error) => {
+      setError('Connection error');
+      console.error('WebSocket error:', error);
+    };
+  }, [apiKey, userId, chatId]);
+
+  const sendMessage = useCallback((content, metadata = {}) => {
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+      throw new Error('Not connected');
+    }
+
+    const message = {
+      content,
+      ...(Object.keys(metadata).length > 0 && { metadata })
+    };
+
+    ws.current.send(JSON.stringify(message));
+  }, []);
+
+  const disconnect = useCallback(() => {
+    if (ws.current) {
+      ws.current.close();
+    }
+  }, []);
+
+  useEffect(() => {
+    connect();
+    return disconnect;
+  }, [connect, disconnect]);
+
+  return {
+    connected,
+    messages,
+    streamingResponse,
+    isStreaming,
+    error,
+    sendMessage,
+    reconnect: connect
+  };
+}
+
+// Usage in component
+function ChatInterface({ apiKey, userId, chatId }) {
+  const {
+    connected,
+    messages,
+    streamingResponse,
+    isStreaming,
+    error,
+    sendMessage,
+    reconnect
+  } = useWebSocketChat(apiKey, userId, chatId);
+
+  const [inputValue, setInputValue] = useState('');
+
+  const handleSend = () => {
+    if (inputValue.trim()) {
+      sendMessage(inputValue);
+      setInputValue('');
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="error">
+        Error: {error}
+        <button onClick={reconnect}>Reconnect</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="chat-interface">
+      <div className="connection-status">
+        Status: {connected ? 'Connected' : 'Disconnected'}
+      </div>
+      
+      <div className="messages">
+        {messages.map(msg => (
+          <div key={msg.id} className={`message ${msg.sender}`}>
+            <strong>{msg.sender === 'user' ? 'You' : 'AI'}:</strong>
+            <p>{msg.content}</p>
+          </div>
+        ))}
+        
+        {isStreaming && (
+          <div className="message assistant streaming">
+            <strong>AI:</strong>
+            <p>{streamingResponse}<span className="cursor">|</span></p>
+          </div>
+        )}
+      </div>
+      
+      <div className="input-area">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+          disabled={!connected}
+          placeholder="Type your message..."
+        />
+        <button onClick={handleSend} disabled={!connected || !inputValue.trim()}>
+          Send
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Python Client Example
+
+```python
+import asyncio
+import websockets
+import json
+
+class ChatWebSocketClient:
+    def __init__(self, api_key, user_id, chat_id):
+        self.api_key = api_key
+        self.user_id = user_id
+        self.chat_id = chat_id
+        self.ws = None
+        self.current_response = ""
+
+    async def connect(self):
+        uri = f"ws://localhost:8000/ws/chat?api_key={self.api_key}&user_id={self.user_id}&chat_id={self.chat_id}"
+        
+        try:
+            self.ws = await websockets.connect(uri)
+            print("Connected to chat WebSocket")
+            
+            # Listen for messages
+            await self.listen()
+        except Exception as e:
+            print(f"Connection error: {e}")
+
+    async def listen(self):
+        try:
+            async for message in self.ws:
+                data = json.loads(message)
+                await self.handle_event(data)
+        except websockets.exceptions.ConnectionClosed:
+            print("Connection closed")
+        except Exception as e:
+            print(f"Error: {e}")
+
+    async def handle_event(self, event):
+        event_type = event.get('event_type')
+        
+        if event_type == 'connection_established':
+            print("Connection established")
+        
+        elif event_type == 'message_received':
+            print(f"Message received: {event['content']}")
+        
+        elif event_type == 'message_stream_started':
+            print("AI is responding...")
+            self.current_response = ""
+        
+        elif event_type == 'message_stream_token':
+            self.current_response += event['token']
+            print(f"\rAI: {self.current_response}", end='', flush=True)
+        
+        elif event_type == 'message_stream_ended':
+            print(f"\nAI response complete: {event['content']}")
+        
+        elif event_type == 'error':
+            print(f"Error: {event['error_message']}")
+
+    async def send_message(self, content, metadata=None):
+        if not self.ws:
+            raise Exception("Not connected")
+        
+        message = {"content": content}
+        if metadata:
+            message["metadata"] = metadata
+        
+        await self.ws.send(json.dumps(message))
+        print(f"Sent: {content}")
+
+    async def disconnect(self):
+        if self.ws:
+            await self.ws.close()
+
+# Usage
+async def main():
+    client = ChatWebSocketClient("your-api-key", "user123", "chat-uuid")
+    
+    # Connect and start listening
+    connect_task = asyncio.create_task(client.connect())
+    
+    # Send a message after a short delay
+    await asyncio.sleep(1)
+    await client.send_message("Hello, I need help!")
+    
+    # Keep the connection alive
+    await connect_task
+
+# Run the client
+asyncio.run(main())
+```
+
+## Best Practices
+
+### Connection Management
+
+1. **Reconnection Logic**: Implement automatic reconnection with exponential backoff
+2. **Heartbeat**: Send periodic ping messages to keep the connection alive
+3. **Graceful Shutdown**: Always close connections properly
+
+### Error Handling
+
+1. **Network Issues**: Handle temporary disconnections gracefully
+2. **Authentication Failures**: Refresh API keys if needed
+3. **Rate Limiting**: Respect rate limits and backoff when needed
+
+### Performance
+
+1. **Message Batching**: Avoid sending messages too rapidly
+2. **Stream Processing**: Process tokens incrementally for better UX
+3. **Memory Management**: Clear old messages to prevent memory leaks
+
+### Security
+
+1. **API Key Storage**: Never expose API keys in client-side code
+2. **Input Validation**: Validate message content before sending
+3. **Connection Limits**: Monitor and limit concurrent connections
+
+## Rate Limits
+
+- **Messages**: 10 messages per second per connection
+- **Concurrent Connections**: 50 per tenant
+- **Connection Duration**: No hard limit, but idle connections may be closed
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Connection Refused**: Check if the chat exists via REST API first
+2. **Authentication Errors**: Verify API key and user permissions
+3. **Message Not Received**: Check network connectivity and rate limits
+4. **Streaming Interrupted**: Implement reconnection logic
+
+### Debugging
+
+Enable WebSocket debugging in your browser or client:
+
+```javascript
+// Browser debugging
+localStorage.debug = 'websocket*';
+
+// Node.js debugging
+DEBUG=websocket* node your-app.js
+``` 

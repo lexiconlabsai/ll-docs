@@ -1,0 +1,292 @@
+---
+title: 'Delete Chat'
+api: 'DELETE /api/v1/chats/{chat_id}'
+---
+
+## Delete Chat
+
+This endpoint permanently deletes a chat session and all its associated messages. This action cannot be undone.
+
+<Warning>
+  This action permanently deletes the chat and all its messages. This operation cannot be undone.
+</Warning>
+
+## Authentication
+
+<ParamField header="X-API-Key" type="string" required>
+  Authentication header with your tenant's API key
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="chat_id" type="string" required>
+  The unique identifier (UUID) of the chat to delete
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the deletion was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message about the deletion
+</ResponseField>
+
+<ResponseField name="deleted_at" type="string" format="date-time">
+  Timestamp when the chat was deleted
+</ResponseField>
+
+<ResponseExample>
+```json Status: 200 OK
+{
+  "success": true,
+  "message": "Chat deleted successfully",
+  "deleted_at": "2024-01-15T10:45:00Z"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<Accordion title="401: Unauthorized">
+  Invalid or missing API key
+</Accordion>
+
+<Accordion title="404: Not Found">
+  Chat not found or doesn't belong to your tenant
+</Accordion>
+
+<Accordion title="409: Conflict">
+  Chat cannot be deleted (e.g., active WebSocket connections)
+</Accordion>
+
+<Accordion title="500: Internal Server Error">
+  Server error processing the request
+</Accordion>
+
+## Example Usage
+
+### cURL
+
+```bash
+curl -X DELETE "http://localhost:8000/api/v1/chats/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" \
+  -H "X-API-Key: your-tenant-api-key"
+```
+
+### JavaScript
+
+```javascript
+const chatId = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d';
+
+fetch(`http://localhost:8000/api/v1/chats/${chatId}`, {
+  method: 'DELETE',
+  headers: {
+    'X-API-Key': 'your-tenant-api-key'
+  }
+})
+.then(response => {
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+})
+.then(data => {
+  if (data.success) {
+    console.log('Chat deleted successfully');
+    // Update UI to remove the chat from the list
+  }
+})
+.catch(error => {
+  console.error('Error deleting chat:', error);
+});
+```
+
+### Python
+
+```python
+import requests
+
+chat_id = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+url = f"http://localhost:8000/api/v1/chats/{chat_id}"
+headers = {"X-API-Key": "your-tenant-api-key"}
+
+response = requests.delete(url, headers=headers)
+
+if response.status_code == 200:
+    data = response.json()
+    if data['success']:
+        print("Chat deleted successfully")
+    else:
+        print("Failed to delete chat")
+elif response.status_code == 404:
+    print("Chat not found")
+elif response.status_code == 409:
+    print("Chat cannot be deleted - it may have active connections")
+else:
+    print(f"Error: {response.status_code}")
+```
+
+### React Hook Example
+
+```javascript
+import { useState } from 'react';
+
+function useDeleteChat() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const deleteChat = async (chatId) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/v1/chats/${chatId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-API-Key': 'your-tenant-api-key'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete chat: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error('Delete operation failed');
+      }
+
+      return data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { deleteChat, loading, error };
+}
+
+// Usage in component
+function ChatItem({ chat, onDeleted }) {
+  const { deleteChat, loading } = useDeleteChat();
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await deleteChat(chat.id);
+      onDeleted(chat.id); // Update parent component
+    } catch (error) {
+      alert('Failed to delete chat: ' + error.message);
+    }
+  };
+
+  return (
+    <div className="chat-item">
+      <h3>{chat.title}</h3>
+      <button 
+        onClick={handleDelete} 
+        disabled={loading}
+        className="delete-button"
+      >
+        {loading ? 'Deleting...' : 'Delete Chat'}
+      </button>
+    </div>
+  );
+}
+```
+
+### Bulk Delete Example
+
+```javascript
+async function deleteMultipleChats(chatIds) {
+  const results = [];
+  
+  // Delete chats in parallel (be mindful of rate limits)
+  const deletePromises = chatIds.map(async (chatId) => {
+    try {
+      const response = await fetch(`/api/v1/chats/${chatId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-API-Key': 'your-tenant-api-key'
+        }
+      });
+      
+      const data = await response.json();
+      return { chatId, success: data.success, error: null };
+    } catch (error) {
+      return { chatId, success: false, error: error.message };
+    }
+  });
+
+  const results = await Promise.all(deletePromises);
+  
+  const successful = results.filter(r => r.success);
+  const failed = results.filter(r => !r.success);
+  
+  console.log(`Successfully deleted ${successful.length} chats`);
+  if (failed.length > 0) {
+    console.log(`Failed to delete ${failed.length} chats:`, failed);
+  }
+  
+  return { successful, failed };
+}
+```
+
+## Best Practices
+
+### Before Deletion
+
+1. **Confirm with User**: Always show a confirmation dialog since deletion is permanent
+2. **Check Active Connections**: Ensure no active WebSocket connections exist for the chat
+3. **Export Data**: Offer users the option to export chat history before deletion
+
+### Error Handling
+
+```javascript
+async function safeDeleteChat(chatId) {
+  try {
+    // First, check if chat exists and get its details
+    const chatResponse = await fetch(`/api/v1/chats/${chatId}`, {
+      headers: { 'X-API-Key': 'your-tenant-api-key' }
+    });
+    
+    if (!chatResponse.ok) {
+      throw new Error('Chat not found');
+    }
+    
+    // Proceed with deletion
+    const deleteResponse = await fetch(`/api/v1/chats/${chatId}`, {
+      method: 'DELETE',
+      headers: { 'X-API-Key': 'your-tenant-api-key' }
+    });
+    
+    if (!deleteResponse.ok) {
+      if (deleteResponse.status === 409) {
+        throw new Error('Chat has active connections. Please wait and try again.');
+      }
+      throw new Error('Failed to delete chat');
+    }
+    
+    return await deleteResponse.json();
+  } catch (error) {
+    console.error('Delete operation failed:', error);
+    throw error;
+  }
+}
+```
+
+## Notes
+
+- Only chats belonging to your tenant can be deleted
+- All messages associated with the chat are also permanently deleted
+- If there are active WebSocket connections to the chat, deletion may fail with a 409 status
+- Consider implementing a "soft delete" pattern in your application if you need to recover deleted chats
+- The operation is atomic - either the entire chat is deleted or the operation fails
+- After successful deletion, any cached data should be invalidated 

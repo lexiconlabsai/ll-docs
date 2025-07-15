@@ -1,0 +1,165 @@
+---
+title: 'Chat API'
+description: 'Endpoints for managing real-time chat conversations'
+---
+
+## Chat API Overview
+
+The Chat API provides endpoints to create and manage real-time chat conversations between users and AI agents. This API supports both REST endpoints for chat management and WebSocket connections for real-time messaging with streaming responses.
+
+## Authentication
+
+All API endpoints require an API key for authentication, which should be included in the request header.
+
+**Header**: `X-API-Key`
+
+**Value**: `YOUR_API_KEY`
+
+<Warning>
+  This API key is unique to your tenant and should be kept secure.
+</Warning>
+
+## Key Concepts
+
+### Chat Sessions
+
+Chat sessions are created via the REST API and contain:
+- User identification
+- Chat metadata and configuration
+- Message history
+- Tenant isolation
+
+### Real-Time Messaging
+
+Once a chat is created, users can connect via WebSocket to:
+- Send messages in real-time
+- Receive streaming AI responses
+- Get connection status updates
+- Handle errors gracefully
+
+## Authentication Flow
+
+The API uses a simple authentication flow:
+
+```
+API Key → Tenant → Access Control
+```
+
+1. **API Key**: Each tenant has a unique API key
+2. **Tenant Resolution**: The API key determines which tenant the request belongs to
+3. **Access Control**: All data is automatically scoped to the authenticated tenant
+
+## API Structure
+
+### REST API (Chat Management)
+
+```
+├── POST   /api/v1/chats/                    # Create chat  
+├── GET    /api/v1/chats/user/{user_id}      # List user chats
+├── GET    /api/v1/chats/{chat_id}           # Get specific chat
+├── GET    /api/v1/chats/{chat_id}/messages  # Get messages (paginated)
+└── DELETE /api/v1/chats/{chat_id}           # Delete chat
+```
+
+### WebSocket API (Real-Time Messaging)
+
+```
+└── ws://localhost:8000/ws/chat              # Real-time messaging
+```
+
+## Quick Start
+
+### 1. Create a Chat
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/chats/" \
+  -H "X-API-Key: your-tenant-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "user123"}'
+```
+
+### 2. Connect to WebSocket
+
+```javascript
+const chatId = "your-chat-id"; // From step 1
+const ws = new WebSocket(`ws://localhost:8000/ws/chat?api_key=your-tenant-api-key&user_id=user123&chat_id=${chatId}`);
+```
+
+### 3. Send Messages
+
+```javascript
+ws.send(JSON.stringify({
+  content: "Hello, I need help with my account"
+}));
+```
+
+## Pagination
+
+Endpoints that return collections (like chat messages) support pagination using `offset` and `limit` parameters:
+
+- `offset`: The number of items to skip before starting to collect results (default 0)
+- `limit`: The maximum number of results to return (default 50)
+- `order`: Sort order for messages, either 'asc' or 'desc' (default 'asc')
+
+The response includes pagination metadata to help with navigation:
+
+```json
+{
+  "messages": [...],
+  "total": 147,
+  "offset": 0,
+  "limit": 50,
+  "has_more": true
+}
+```
+
+## WebSocket Events
+
+The WebSocket connection provides several event types:
+
+- **Connection Events**: `connection_established`, `user_created`
+- **Message Events**: `message_received`, `message_stream_started`, `message_stream_token`, `message_stream_ended`
+- **Error Events**: `error` with specific error codes
+
+## Error Handling
+
+The API provides clear error responses with:
+- **Error Codes**: Standardized error identifiers
+- **Error Messages**: Human-readable descriptions
+- **Details**: Additional context and suggested fixes
+
+Common error scenarios:
+- Invalid API keys
+- Chat not found
+- Missing required parameters
+- Connection timeouts
+
+## Best Practices
+
+### Chat Management
+
+- Create chats via REST API before connecting to WebSocket
+- Store chat IDs for future reference
+- Use meaningful titles and metadata for organization
+
+### WebSocket Connections
+
+- Handle connection errors gracefully
+- Implement reconnection logic for network issues
+- Process streaming tokens incrementally for better UX
+
+### Security
+
+- Keep API keys secure and never expose them in client-side code
+- Validate user permissions before granting chat access
+- Use HTTPS/WSS in production environments
+
+## Rate Limits
+
+The API implements reasonable rate limits to ensure service stability:
+
+- **REST API**: 100 requests per minute per tenant
+- **WebSocket**: 10 messages per second per connection
+- **Concurrent Connections**: 50 per tenant
+
+Rate limit headers are included in REST API responses to help you track usage. 

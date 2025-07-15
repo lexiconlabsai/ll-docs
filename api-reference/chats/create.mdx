@@ -1,0 +1,175 @@
+---
+title: 'Create Chat'
+api: 'POST /api/v1/chats/'
+---
+
+## Create Chat
+
+This endpoint creates a new chat session for a user. The chat session can then be used for real-time messaging via WebSocket connections.
+
+## Authentication
+
+<ParamField header="X-API-Key" type="string" required>
+  Authentication header with your tenant's API key
+</ParamField>
+
+## Request Body
+
+<ParamField body="user_id" type="string" required>
+  The ID of the user creating the chat session
+</ParamField>
+
+<ParamField body="title" type="string">
+  Optional custom title for the chat. If not provided, a title will be auto-generated.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional metadata object to store additional information about the chat
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the chat session (UUID format)
+</ResponseField>
+
+<ResponseField name="user_id" type="string">
+  The ID of the user who owns this chat
+</ResponseField>
+
+<ResponseField name="tenant_id" type="string">
+  The tenant identifier (automatically determined from API key)
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The title of the chat session
+</ResponseField>
+
+<ResponseField name="config" type="object">
+  Configuration object containing metadata and other chat settings
+</ResponseField>
+
+<ResponseField name="created_at" type="string" format="date-time">
+  Timestamp when the chat was created
+</ResponseField>
+
+<ResponseField name="updated_at" type="string" format="date-time">
+  Timestamp when the chat was last updated
+</ResponseField>
+
+<ResponseField name="last_message_at" type="string | null" format="date-time">
+  Timestamp of the last message in this chat (null for new chats)
+</ResponseField>
+
+<ResponseExample>
+```json Status: 201 Created
+{
+  "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "user_id": "user123",
+  "tenant_id": "tenant-uuid-here",
+  "title": "Support Session",
+  "config": {
+    "metadata": {
+      "department": "technical",
+      "priority": "high"
+    }
+  },
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z",
+  "last_message_at": null
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<Accordion title="400: Bad Request">
+  Invalid request body or missing required fields
+</Accordion>
+
+<Accordion title="401: Unauthorized">
+  Invalid or missing API key
+</Accordion>
+
+<Accordion title="500: Internal Server Error">
+  Server error processing the request
+</Accordion>
+
+## Example Usage
+
+### cURL
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/chats/" \
+  -H "X-API-Key: your-tenant-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user123",
+    "title": "Support Session",
+    "metadata": {
+      "department": "technical",
+      "priority": "high"
+    }
+  }'
+```
+
+### JavaScript
+
+```javascript
+fetch('http://localhost:8000/api/v1/chats/', {
+  method: 'POST',
+  headers: {
+    'X-API-Key': 'your-tenant-api-key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    user_id: 'user123',
+    title: 'Support Session',
+    metadata: {
+      department: 'technical',
+      priority: 'high'
+    }
+  })
+})
+.then(response => response.json())
+.then(data => {
+  console.log('Chat created:', data);
+  const chatId = data.id;
+  // Use chatId for WebSocket connection
+})
+.catch(error => console.error('Error:', error));
+```
+
+### Python
+
+```python
+import requests
+import json
+
+url = "http://localhost:8000/api/v1/chats/"
+headers = {
+    "X-API-Key": "your-tenant-api-key",
+    "Content-Type": "application/json"
+}
+data = {
+    "user_id": "user123",
+    "title": "Support Session",
+    "metadata": {
+        "department": "technical",
+        "priority": "high"
+    }
+}
+
+response = requests.post(url, headers=headers, json=data)
+chat_data = response.json()
+print(f"Chat created with ID: {chat_data['id']}")
+```
+
+## Notes
+
+- Only `user_id` is required in the request body
+- If `title` is not provided, the system will auto-generate one
+- The `tenant_id` is automatically determined from the API key
+- If the user doesn't exist, a user entity will be auto-created
+- The chat ID returned should be used for subsequent WebSocket connections
+- Metadata can contain any custom key-value pairs for your application needs 

@@ -1,0 +1,350 @@
+---
+title: 'Get Chat Messages'
+api: 'GET /api/v1/chats/{chat_id}/messages'
+---
+
+## Get Chat Messages
+
+This endpoint retrieves paginated messages from a specific chat session. Messages are returned in chronological order and include both user and AI assistant messages.
+
+## Authentication
+
+<ParamField header="X-API-Key" type="string" required>
+  Authentication header with your tenant's API key
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="chat_id" type="string" required>
+  The unique identifier (UUID) of the chat whose messages you want to retrieve
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="offset" type="integer" default="0">
+  The number of messages to skip before starting to collect results
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  The maximum number of messages to return (max 100)
+</ParamField>
+
+<ParamField query="order" type="string" default="asc">
+  Sort order for messages by creation time. Options: 'asc' (oldest first) or 'desc' (newest first)
+</ParamField>
+
+## Response
+
+<ResponseField name="messages" type="array">
+  Array of message objects from the chat
+</ResponseField>
+
+<ResponseField name="total" type="integer">
+  Total number of messages in this chat
+</ResponseField>
+
+<ResponseField name="offset" type="integer">
+  Current offset value used for pagination
+</ResponseField>
+
+<ResponseField name="limit" type="integer">
+  Current limit value used for pagination
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean">
+  Indicates if there are more messages available
+</ResponseField>
+
+### Message Object
+
+<ResponseField name="id" type="string">
+  Unique identifier for the message
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  The text content of the message
+</ResponseField>
+
+<ResponseField name="sender_role" type="string">
+  Role of the message sender. Values: 'user' or 'assistant'
+</ResponseField>
+
+<ResponseField name="media_type" type="string | null">
+  Type of media attachment, if any (e.g., 'image', 'file')
+</ResponseField>
+
+<ResponseField name="media_url" type="string | null">
+  URL to the media attachment, if any
+</ResponseField>
+
+<ResponseField name="created_at" type="string" format="date-time">
+  Timestamp when the message was created
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Additional metadata associated with the message
+</ResponseField>
+
+<ResponseExample>
+```json Status: 200 OK
+{
+  "messages": [
+    {
+      "id": "msg-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "content": "Hello, I need help with my account",
+      "sender_role": "user",
+      "media_type": null,
+      "media_url": null,
+      "created_at": "2024-01-15T10:30:00Z",
+      "metadata": {
+        "user_agent": "Mozilla/5.0..."
+      }
+    },
+    {
+      "id": "msg-b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "content": "I'd be happy to help you with your account! What specific issue are you experiencing?",
+      "sender_role": "assistant",
+      "media_type": null,
+      "media_url": null,
+      "created_at": "2024-01-15T10:30:05Z",
+      "metadata": {
+        "model": "gpt-4",
+        "tokens_used": 87
+      }
+    },
+    {
+      "id": "msg-c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+      "content": "I can't log into my account. It says my password is incorrect.",
+      "sender_role": "user",
+      "media_type": null,
+      "media_url": null,
+      "created_at": "2024-01-15T10:30:30Z",
+      "metadata": {}
+    },
+    {
+      "id": "msg-d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a",
+      "content": "I understand you're having trouble logging in. Let me help you troubleshoot this issue. First, let's try resetting your password.",
+      "sender_role": "assistant",
+      "media_type": null,
+      "media_url": null,
+      "created_at": "2024-01-15T10:30:35Z",
+      "metadata": {
+        "model": "gpt-4",
+        "tokens_used": 124
+      }
+    }
+  ],
+  "total": 15,
+  "offset": 0,
+  "limit": 50,
+  "has_more": false
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<Accordion title="400: Bad Request">
+  Invalid query parameters (e.g., limit exceeds maximum)
+</Accordion>
+
+<Accordion title="401: Unauthorized">
+  Invalid or missing API key
+</Accordion>
+
+<Accordion title="404: Not Found">
+  Chat not found or doesn't belong to your tenant
+</Accordion>
+
+<Accordion title="500: Internal Server Error">
+  Server error processing the request
+</Accordion>
+
+## Example Usage
+
+### cURL
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/chats/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/messages?offset=0&limit=20&order=asc" \
+  -H "X-API-Key: your-tenant-api-key"
+```
+
+### JavaScript
+
+```javascript
+const chatId = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d';
+const params = new URLSearchParams({
+  offset: '0',
+  limit: '20',
+  order: 'asc'
+});
+
+fetch(`http://localhost:8000/api/v1/chats/${chatId}/messages?${params}`, {
+  method: 'GET',
+  headers: {
+    'X-API-Key': 'your-tenant-api-key'
+  }
+})
+.then(response => response.json())
+.then(data => {
+  console.log(`Retrieved ${data.messages.length} of ${data.total} messages`);
+  
+  data.messages.forEach(msg => {
+    const sender = msg.sender_role === 'user' ? 'User' : 'Assistant';
+    console.log(`[${sender}]: ${msg.content.substring(0, 100)}...`);
+  });
+  
+  if (data.has_more) {
+    console.log('More messages available');
+  }
+})
+.catch(error => console.error('Error:', error));
+```
+
+### Python
+
+```python
+import requests
+
+chat_id = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+url = f"http://localhost:8000/api/v1/chats/{chat_id}/messages"
+headers = {"X-API-Key": "your-tenant-api-key"}
+params = {
+    "offset": 0,
+    "limit": 20,
+    "order": "asc"
+}
+
+response = requests.get(url, headers=headers, params=params)
+data = response.json()
+
+print(f"Retrieved {len(data['messages'])} of {data['total']} messages")
+
+for msg in data['messages']:
+    sender = "User" if msg['sender_role'] == 'user' else "Assistant"
+    content_preview = msg['content'][:100] + "..." if len(msg['content']) > 100 else msg['content']
+    print(f"[{sender}]: {content_preview}")
+
+if data['has_more']:
+    print("More messages available")
+```
+
+### React Component Example
+
+```javascript
+import { useState, useEffect } from 'react';
+
+function ChatMessages({ chatId }) {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+
+  useEffect(() => {
+    loadMessages();
+  }, [chatId]);
+
+  const loadMessages = async (offset = 0) => {
+    try {
+      const params = new URLSearchParams({
+        offset: offset.toString(),
+        limit: '50',
+        order: 'asc'
+      });
+
+      const response = await fetch(`/api/v1/chats/${chatId}/messages?${params}`, {
+        headers: {
+          'X-API-Key': 'your-tenant-api-key'
+        }
+      });
+
+      const data = await response.json();
+      
+      if (offset === 0) {
+        setMessages(data.messages);
+      } else {
+        setMessages(prev => [...prev, ...data.messages]);
+      }
+      
+      setTotal(data.total);
+      setHasMore(data.has_more);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMore = () => {
+    loadMessages(messages.length);
+  };
+
+  if (loading && messages.length === 0) {
+    return <div>Loading messages...</div>;
+  }
+
+  return (
+    <div className="chat-messages">
+      <h3>Messages ({total} total)</h3>
+      
+      {messages.map(msg => (
+        <div key={msg.id} className={`message ${msg.sender_role}`}>
+          <strong>{msg.sender_role === 'user' ? 'You' : 'Assistant'}:</strong>
+          <p>{msg.content}</p>
+          <small>{new Date(msg.created_at).toLocaleString()}</small>
+        </div>
+      ))}
+      
+      {hasMore && (
+        <button onClick={loadMore} disabled={loading}>
+          Load More Messages
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Pagination Example
+
+To load all messages in a chat, you can implement pagination:
+
+```javascript
+async function loadAllMessages(chatId) {
+  let allMessages = [];
+  let offset = 0;
+  const limit = 100; // Maximum allowed
+  let hasMore = true;
+
+  while (hasMore) {
+    const params = new URLSearchParams({
+      offset: offset.toString(),
+      limit: limit.toString(),
+      order: 'asc'
+    });
+
+    const response = await fetch(`/api/v1/chats/${chatId}/messages?${params}`, {
+      headers: {
+        'X-API-Key': 'your-tenant-api-key'
+      }
+    });
+
+    const data = await response.json();
+    allMessages = [...allMessages, ...data.messages];
+    
+    hasMore = data.has_more;
+    offset += data.messages.length;
+  }
+
+  return allMessages;
+}
+```
+
+## Notes
+
+- Messages are returned in chronological order when using `order=asc` (recommended for chat display)
+- Use `order=desc` to get the most recent messages first
+- The maximum `limit` is 100 messages per request
+- Empty chats will return an empty messages array with `total: 0`
+- Media attachments (if any) are referenced via `media_url` fields
+- Message metadata may contain additional information like AI model details or user context 

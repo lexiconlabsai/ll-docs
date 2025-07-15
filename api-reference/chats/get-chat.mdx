@@ -1,0 +1,215 @@
+---
+title: 'Get Chat'
+api: 'GET /api/v1/chats/{chat_id}'
+---
+
+## Get Chat
+
+This endpoint retrieves detailed information about a specific chat session, including its configuration and metadata.
+
+## Authentication
+
+<ParamField header="X-API-Key" type="string" required>
+  Authentication header with your tenant's API key
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="chat_id" type="string" required>
+  The unique identifier (UUID) of the chat to retrieve
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the chat session
+</ResponseField>
+
+<ResponseField name="user_id" type="string">
+  The ID of the user who owns this chat
+</ResponseField>
+
+<ResponseField name="tenant_id" type="string">
+  The tenant identifier
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The title of the chat session
+</ResponseField>
+
+<ResponseField name="config" type="object">
+  Configuration object containing metadata and chat settings
+</ResponseField>
+
+<ResponseField name="created_at" type="string" format="date-time">
+  Timestamp when the chat was created
+</ResponseField>
+
+<ResponseField name="updated_at" type="string" format="date-time">
+  Timestamp when the chat was last updated
+</ResponseField>
+
+<ResponseField name="last_message_at" type="string | null" format="date-time">
+  Timestamp of the last message in this chat
+</ResponseField>
+
+<ResponseField name="message_count" type="integer">
+  Total number of messages in this chat
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status of the chat (e.g., "active", "closed")
+</ResponseField>
+
+<ResponseExample>
+```json Status: 200 OK
+{
+  "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "user_id": "user123",
+  "tenant_id": "tenant-uuid-here",
+  "title": "Support Session",
+  "config": {
+    "metadata": {
+      "department": "technical",
+      "priority": "high",
+      "category": "account_issue"
+    }
+  },
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:35:00Z",
+  "last_message_at": "2024-01-15T10:35:00Z",
+  "message_count": 12,
+  "status": "active"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<Accordion title="401: Unauthorized">
+  Invalid or missing API key
+</Accordion>
+
+<Accordion title="404: Not Found">
+  Chat not found or doesn't belong to your tenant
+</Accordion>
+
+<Accordion title="500: Internal Server Error">
+  Server error processing the request
+</Accordion>
+
+## Example Usage
+
+### cURL
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/chats/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" \
+  -H "X-API-Key: your-tenant-api-key"
+```
+
+### JavaScript
+
+```javascript
+const chatId = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d';
+
+fetch(`http://localhost:8000/api/v1/chats/${chatId}`, {
+  method: 'GET',
+  headers: {
+    'X-API-Key': 'your-tenant-api-key'
+  }
+})
+.then(response => {
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+})
+.then(chat => {
+  console.log(`Chat: ${chat.title}`);
+  console.log(`Messages: ${chat.message_count}`);
+  console.log(`Last activity: ${chat.last_message_at}`);
+  console.log(`Status: ${chat.status}`);
+})
+.catch(error => console.error('Error:', error));
+```
+
+### Python
+
+```python
+import requests
+
+chat_id = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+url = f"http://localhost:8000/api/v1/chats/{chat_id}"
+headers = {"X-API-Key": "your-tenant-api-key"}
+
+response = requests.get(url, headers=headers)
+
+if response.status_code == 200:
+    chat = response.json()
+    print(f"Chat: {chat['title']}")
+    print(f"Messages: {chat['message_count']}")
+    print(f"Last activity: {chat['last_message_at']}")
+    print(f"Status: {chat['status']}")
+elif response.status_code == 404:
+    print("Chat not found")
+else:
+    print(f"Error: {response.status_code}")
+```
+
+### React Hook Example
+
+```javascript
+import { useState, useEffect } from 'react';
+
+function useChat(chatId) {
+  const [chat, setChat] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!chatId) return;
+
+    fetch(`http://localhost:8000/api/v1/chats/${chatId}`, {
+      headers: {
+        'X-API-Key': 'your-tenant-api-key'
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Chat not found');
+      }
+      return response.json();
+    })
+    .then(setChat)
+    .catch(setError)
+    .finally(() => setLoading(false));
+  }, [chatId]);
+
+  return { chat, loading, error };
+}
+
+// Usage in component
+function ChatHeader({ chatId }) {
+  const { chat, loading, error } = useChat(chatId);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (!chat) return null;
+
+  return (
+    <div>
+      <h1>{chat.title}</h1>
+      <p>{chat.message_count} messages</p>
+      <p>Status: {chat.status}</p>
+    </div>
+  );
+}
+```
+
+## Notes
+
+- Only chats belonging to your tenant can be accessed
+- This endpoint is useful for retrieving chat metadata before connecting via WebSocket
+- The `config` object contains any custom metadata you stored when creating the chat
+- `message_count` gives you a quick overview without fetching all messages
+- Use this endpoint to validate chat existence before establishing WebSocket connections 
